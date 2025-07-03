@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from groq import Groq
 import os
 import json
-import re
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
@@ -24,11 +23,12 @@ async def generate_blog(data: BlogRequest):
         f"- 5 comma-separated SEO tags\n"
         f"- A body with at least 500 words\n"
         f"- The body must use Markdown with multiple sections and headings.\n\n"
-        f"**IMPORTANT:** All strings must be properly JSON-escaped (e.g., newlines as \\n, quotes as \\\").\n\n"
+        f"**IMPORTANT:** Do NOT include ```json code fences or any other formatting around the JSON.\n"
+        f"Respond ONLY with raw JSON.\n\n"
         f"Topic: {data.topic}\n"
         f"Tone: {data.tone}\n"
         f"Audience: {data.audience}\n\n"
-        f"Respond ONLY with JSON in this format:\n"
+        f"JSON format:\n"
         f'{{\n'
         f'  "title": "string",\n'
         f'  "meta_description": "string",\n'
@@ -50,13 +50,17 @@ async def generate_blog(data: BlogRequest):
 
     print("\n=== RAW MODEL OUTPUT ===\n", raw_output)
 
-    # Pre-clean output: escape unescaped newlines and quotes
-    cleaned_output = raw_output.replace("\r", "\\r").replace("\n", "\\n")
-    # Also escape unescaped quotes after colons (common)
-    cleaned_output = re.sub(r'(?<=:\s)"(.*?)"(,?)', lambda m: ':"' + m.group(1).replace('"', '\\"') + '"' + m.group(2), cleaned_output)
+    # Clean: remove any leading/trailing code fences
+    if raw_output.startswith("```json"):
+        raw_output = raw_output.replace("```json", "").strip()
+    if raw_output.endswith("```"):
+        raw_output = raw_output[:-3].strip()
+    if raw_output.startswith("```"):
+        raw_output = raw_output[3:].strip()
 
+    # Now parse
     try:
-        blog = json.loads(cleaned_output)
+        blog = json.loads(raw_output)
     except json.JSONDecodeError as e:
         print("\n=== JSON DECODE ERROR ===\n", str(e))
         raise HTTPException(
