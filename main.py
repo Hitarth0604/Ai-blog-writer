@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from groq import OpenAI
+from groq import Groq
 import os
 
 # Initialize Groq client
