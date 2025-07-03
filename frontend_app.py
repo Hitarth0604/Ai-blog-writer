@@ -4,12 +4,11 @@ import requests
 from io import BytesIO
 from output_utils import blog_to_docx
 
-
 # --- Config ---
 API_URL = "https://ai-blog-writer-ibfk.onrender.com/generate"
 st.set_page_config(page_title="AI First Draft", layout="wide")
 
-# --- Custom CSS: Cursor-inspired ---
+# --- Custom CSS ---
 st.markdown("""
     <style>
     html, body {
@@ -113,8 +112,17 @@ if submitted:
                     "audience": audience
                 })
 
+                # Always show the raw response for debugging
+                st.write("RAW RESPONSE TEXT:", res.text)
+
                 if res.status_code == 200:
-                    blog = res.json()
+                    try:
+                        blog = res.json()
+                    except Exception as json_err:
+                        st.error("❌ Failed to parse JSON response.")
+                        st.code(res.text)
+                        raise json_err
+
                     st.success("✅ Blog generated!")
 
                     st.markdown(f"### 📝 `{blog['title']}`")
@@ -128,7 +136,12 @@ if submitted:
                     st.markdown(f"📏 Word Count: {len(blog['body'].split())} words")
                     st.markdown(f"🏷️ Tags: {len(blog['tags'].split(','))} tags")
 
-                    doc = blog_to_docx(blog['title'], blog['meta_description'], blog['tags'], blog['body'])
+                    doc = blog_to_docx(
+                        blog['title'],
+                        blog['meta_description'],
+                        blog['tags'],
+                        blog['body']
+                    )
                     buffer = BytesIO()
                     doc.save(buffer)
                     st.download_button(
@@ -138,11 +151,12 @@ if submitted:
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     )
                 else:
-                    st.error(f"Error: {res.status_code}")
+                    st.error(f"❌ Error: {res.status_code}")
                     st.code(res.text)
 
             except Exception as e:
                 st.error("Something went wrong! Showing fallback content...")
+                st.exception(e)  # Show the full traceback in the UI
 
                 blog = {
                     "title": "5 Tips to Boost Productivity Remotely",
@@ -160,4 +174,3 @@ if submitted:
                 st.markdown("**Tags:** " + ", ".join(blog['tags'].split(",")))
                 st.markdown("---")
                 st.code(blog["body"], language="markdown")
-
