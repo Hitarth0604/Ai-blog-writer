@@ -6,7 +6,7 @@ from output_utils import blog_to_docx
 
 
 # --- Config ---
-API_URL = "https://ai-first-draft.onrender.com/generate"
+API_URL = "https://ai-blog-writer-ibfk.onrender.com/generate"
 st.set_page_config(page_title="AI First Draft", layout="wide")
 
 # --- Custom CSS: Cursor-inspired ---
