@@ -16,27 +16,27 @@ class BlogRequest(BaseModel):
 @app.post("/generate")
 async def generate_blog(data: BlogRequest):
     prompt = (
-        f"Generate a blog post in JSON format with these keys:\n"
-        f"title\nmeta_description\ntags\nbody\n\n"
+        f"You are a helpful assistant that always responds ONLY with valid JSON without markdown formatting or extra commentary.\n\n"
+        f"Generate a blog post in this exact JSON format:\n\n"
+        f'{{\n'
+        f'  "title": "string",\n'
+        f'  "meta_description": "string",\n'
+        f'  "tags": "tag1, tag2, tag3",\n'
+        f'  "body": "string"\n'
+        f'}}\n\n'
         f"Topic: {data.topic}\n"
         f"Tone: {data.tone}\n"
         f"Audience: {data.audience}\n\n"
-        f"Example JSON format:\n"
-        f"{{\n"
-        f'  "title": "...",\n'
-        f'  "meta_description": "...",\n'
-        f'  "tags": "tag1, tag2, tag3",\n'
-        f'  "body": "markdown content here"\n'
-        f"}}"
+        f"Respond ONLY with JSON."
     )
 
     completion = client.chat.completions.create(
         model="llama3-70b-8192",
         messages=[
-            {"role": "system", "content": "You generate structured JSON blog posts."},
+            {"role": "system", "content": "You generate structured JSON blog posts without any commentary or formatting."},
             {"role": "user", "content": prompt}
         ],
-        temperature=0.7
+        temperature=0.3
     )
 
     raw_output = completion.choices[0].message.content.strip()
@@ -47,6 +47,6 @@ async def generate_blog(data: BlogRequest):
         blog = json.loads(raw_output)
     except json.JSONDecodeError as e:
         print("\n=== JSON DECODE ERROR ===\n", str(e))
-        raise HTTPException(status_code=500, detail=f"Invalid JSON from model: {raw_output}")
+        raise HTTPException(status_code=500, detail=f"Invalid JSON from model. Raw output: {raw_output}")
 
     return blog
