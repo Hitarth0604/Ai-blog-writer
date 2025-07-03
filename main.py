@@ -4,7 +4,7 @@ from groq import Groq
 import os
 
 # Initialize Groq client
-client = OpenAI(api_key=os.getenv("GROQ_API_KEY"))
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 app = FastAPI()
 
