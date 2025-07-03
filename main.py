@@ -1,9 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from groq import Groq
 import os
+import json
 
-# Initialize Groq client
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 app = FastAPI()
@@ -15,9 +15,7 @@ class BlogRequest(BaseModel):
 
 @app.post("/generate")
 async def generate_blog(data: BlogRequest):
-    # Build prompt to get structured output
     prompt = (
-        f"You are a helpful AI blog writer.\n\n"
         f"Generate a blog post in JSON format with these keys:\n"
         f"title\nmeta_description\ntags\nbody\n\n"
         f"Topic: {data.topic}\n"
@@ -32,9 +30,8 @@ async def generate_blog(data: BlogRequest):
         f"}}"
     )
 
-    # Call Groq API
     completion = client.chat.completions.create(
-        model="mixtral-8x7b-32768",
+        model="mixtral-8x7b",  # ✅ Updated model here
         messages=[
             {"role": "system", "content": "You generate structured JSON blog posts."},
             {"role": "user", "content": prompt}
@@ -42,14 +39,14 @@ async def generate_blog(data: BlogRequest):
         temperature=0.7
     )
 
-    # Extract model output
     raw_output = completion.choices[0].message.content.strip()
 
-    # For debugging:
     print("\n=== RAW MODEL OUTPUT ===\n", raw_output)
 
-    # Safely parse JSON
-    import json
-    blog = json.loads(raw_output)
+    try:
+        blog = json.loads(raw_output)
+    except json.JSONDecodeError as e:
+        print("\n=== JSON DECODE ERROR ===\n", str(e))
+        raise HTTPException(status_code=500, detail=f"Invalid JSON from model: {raw_output}")
 
     return blog
