@@ -1,5 +1,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from groq import OpenAI
+import os
+
+# Initialize Groq client
+client = OpenAI(api_key=os.getenv("GROQ_API_KEY"))
 
 app = FastAPI()
 
@@ -10,27 +15,41 @@ class BlogRequest(BaseModel):
 
 @app.post("/generate")
 async def generate_blog(data: BlogRequest):
-    # Here you can call your Groq/generative model instead of this dummy content.
-    title = f"Revolutionize Your Workflow: {data.topic}"
-    meta_description = (
-        f"Discover how {data.topic} can transform your workflow with a {data.tone.lower()} approach."
-    )
-    tags = "ai, productivity, workflow, 2025"
-    body = (
-        f"# {data.topic}\n\n"
-        f"Welcome to the future of {data.topic.lower()}! "
-        f"This {data.tone.lower()} guide is tailored for {data.audience}.\n\n"
-        "## Section 1: Overview\n"
-        "Learn about the most important trends and tools.\n\n"
-        "## Section 2: Implementation\n"
-        "Tips on applying these insights to your workflow.\n\n"
-        "## Conclusion\n"
-        "Stay ahead by embracing innovation today."
+    # Build prompt to get structured output
+    prompt = (
+        f"You are a helpful AI blog writer.\n\n"
+        f"Generate a blog post in JSON format with these keys:\n"
+        f"title\nmeta_description\ntags\nbody\n\n"
+        f"Topic: {data.topic}\n"
+        f"Tone: {data.tone}\n"
+        f"Audience: {data.audience}\n\n"
+        f"Example JSON format:\n"
+        f"{{\n"
+        f'  "title": "...",\n'
+        f'  "meta_description": "...",\n'
+        f'  "tags": "tag1, tag2, tag3",\n'
+        f'  "body": "markdown content here"\n'
+        f"}}"
     )
 
-    return {
-        "title": title,
-        "meta_description": meta_description,
-        "tags": tags,
-        "body": body
-    }
+    # Call Groq API
+    completion = client.chat.completions.create(
+        model="mixtral-8x7b-32768",
+        messages=[
+            {"role": "system", "content": "You generate structured JSON blog posts."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.7
+    )
+
+    # Extract model output
+    raw_output = completion.choices[0].message.content.strip()
+
+    # For debugging:
+    print("\n=== RAW MODEL OUTPUT ===\n", raw_output)
+
+    # Safely parse JSON
+    import json
+    blog = json.loads(raw_output)
+
+    return blog
