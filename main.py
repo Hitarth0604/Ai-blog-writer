@@ -31,7 +31,7 @@ async def generate_blog(data: BlogRequest):
     )
 
     completion = client.chat.completions.create(
-        model="gemma-7b-it",   # ✅ Use this universally available model
+        model="llama3-70b-8192",
         messages=[
             {"role": "system", "content": "You generate structured JSON blog posts."},
             {"role": "user", "content": prompt}
