@@ -1,27 +1,7 @@
-print("🔥 main.py is loading...")
-
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import os
-
-print("✅ Step 1: FastAPI + os imported")
-
-try:
-    from blog import generate_blog
-    print("✅ Step 2: Imported generate_blog successfully")
-except Exception as import_error:
-    print("❌ Import failed:", str(import_error))
 
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 class BlogRequest(BaseModel):
     topic: str
@@ -29,13 +9,28 @@ class BlogRequest(BaseModel):
     audience: str
 
 @app.post("/generate")
-def generate_blog_api(data: BlogRequest):
-    print("📥 Received request:", data)
-    print("🔑 GROQ_API_KEY present:", os.getenv("GROQ_API_KEY") is not None)
-    try:
-        result = generate_blog(data.topic, data.tone, data.audience)
-        print("✅ Blog generated")
-        return result
-    except Exception as e:
-        print("❌ ERROR in generate_blog:", str(e))
-        return {"error": "Internal server error"}
+async def generate_blog(data: BlogRequest):
+    # Here you can call your Groq/generative model instead of this dummy content.
+    title = f"Revolutionize Your Workflow: {data.topic}"
+    meta_description = (
+        f"Discover how {data.topic} can transform your workflow with a {data.tone.lower()} approach."
+    )
+    tags = "ai, productivity, workflow, 2025"
+    body = (
+        f"# {data.topic}\n\n"
+        f"Welcome to the future of {data.topic.lower()}! "
+        f"This {data.tone.lower()} guide is tailored for {data.audience}.\n\n"
+        "## Section 1: Overview\n"
+        "Learn about the most important trends and tools.\n\n"
+        "## Section 2: Implementation\n"
+        "Tips on applying these insights to your workflow.\n\n"
+        "## Conclusion\n"
+        "Stay ahead by embracing innovation today."
+    )
+
+    return {
+        "title": title,
+        "meta_description": meta_description,
+        "tags": tags,
+        "body": body
+    }
