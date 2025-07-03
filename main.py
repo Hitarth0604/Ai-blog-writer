@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from groq import Groq
 import os
 import json
+import re
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
@@ -22,7 +23,8 @@ async def generate_blog(data: BlogRequest):
         f"- A meta description (max 160 characters)\n"
         f"- 5 comma-separated SEO tags\n"
         f"- A body with at least 500 words\n"
-        f"- The body must use Markdown with multiple sections and H2/H3 headings, bullet lists if relevant, and a conclusion.\n\n"
+        f"- The body must use Markdown with multiple sections and headings.\n\n"
+        f"**IMPORTANT:** All strings must be properly JSON-escaped (e.g., newlines as \\n, quotes as \\\").\n\n"
         f"Topic: {data.topic}\n"
         f"Tone: {data.tone}\n"
         f"Audience: {data.audience}\n\n"
@@ -48,10 +50,18 @@ async def generate_blog(data: BlogRequest):
 
     print("\n=== RAW MODEL OUTPUT ===\n", raw_output)
 
+    # Pre-clean output: escape unescaped newlines and quotes
+    cleaned_output = raw_output.replace("\r", "\\r").replace("\n", "\\n")
+    # Also escape unescaped quotes after colons (common)
+    cleaned_output = re.sub(r'(?<=:\s)"(.*?)"(,?)', lambda m: ':"' + m.group(1).replace('"', '\\"') + '"' + m.group(2), cleaned_output)
+
     try:
-        blog = json.loads(raw_output)
+        blog = json.loads(cleaned_output)
     except json.JSONDecodeError as e:
         print("\n=== JSON DECODE ERROR ===\n", str(e))
-        raise HTTPException(status_code=500, detail=f"Invalid JSON from model. Raw output: {raw_output}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Invalid JSON from model. Raw output:\n{raw_output}"
+        )
 
     return blog

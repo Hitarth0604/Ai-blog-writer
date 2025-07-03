@@ -1,4 +1,3 @@
-# frontend_app.py
 import streamlit as st
 import requests
 from io import BytesIO
@@ -130,7 +129,8 @@ if submitted:
                     st.markdown("**Tags:** " + ", ".join(blog['tags'].split(",")))
                     st.markdown("---")
 
-                    st.code(blog["body"], language="markdown")
+                    # 🚀 Renders clean markdown
+                    st.markdown(blog["body"], unsafe_allow_html=True)
 
                     st.markdown("---")
                     st.markdown(f"📏 Word Count: {len(blog['body'].split())} words")
@@ -164,8 +164,10 @@ if submitted:
                     "tags": "remote work, focus, productivity, home office, habits",
                     "body": (
                         "Working from home can be empowering — but it comes with distractions...\n\n"
-                        "**Start with structure**\nMake a plan every morning...\n\n"
-                        "**Stay active, take breaks**\nYour brain needs rest too..."
+                        "## Start with structure\n"
+                        "Make a plan every morning...\n\n"
+                        "## Stay active, take breaks\n"
+                        "Your brain needs rest too..."
                     )
                 }
 
@@ -173,4 +175,4 @@ if submitted:
                 st.markdown(f"**Meta Description:** {blog['meta_description']}")
                 st.markdown("**Tags:** " + ", ".join(blog['tags'].split(",")))
                 st.markdown("---")
-                st.code(blog["body"], language="markdown")
+                st.markdown(blog["body"], unsafe_allow_html=True)
