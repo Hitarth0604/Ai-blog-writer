@@ -16,18 +16,23 @@ class BlogRequest(BaseModel):
 @app.post("/generate")
 async def generate_blog(data: BlogRequest):
     prompt = (
-        f"You are a helpful assistant that always responds ONLY with valid JSON without markdown formatting or extra commentary.\n\n"
-        f"Generate a blog post in this exact JSON format:\n\n"
-        f'{{\n'
-        f'  "title": "string",\n'
-        f'  "meta_description": "string",\n'
-        f'  "tags": "tag1, tag2, tag3",\n'
-        f'  "body": "string"\n'
-        f'}}\n\n'
+        f"You are a helpful assistant that ALWAYS responds ONLY with valid JSON (no markdown wrapping, no commentary).\n\n"
+        f"Write a complete, high-quality SEO blog post with:\n"
+        f"- A compelling title\n"
+        f"- A meta description (max 160 characters)\n"
+        f"- 5 comma-separated SEO tags\n"
+        f"- A body with at least 500 words\n"
+        f"- The body must use Markdown with multiple sections and H2/H3 headings, bullet lists if relevant, and a conclusion.\n\n"
         f"Topic: {data.topic}\n"
         f"Tone: {data.tone}\n"
         f"Audience: {data.audience}\n\n"
-        f"Respond ONLY with JSON."
+        f"Respond ONLY with JSON in this format:\n"
+        f'{{\n'
+        f'  "title": "string",\n'
+        f'  "meta_description": "string",\n'
+        f'  "tags": "tag1, tag2, tag3, tag4, tag5",\n'
+        f'  "body": "markdown content here"\n'
+        f'}}'
     )
 
     completion = client.chat.completions.create(
@@ -36,7 +41,7 @@ async def generate_blog(data: BlogRequest):
             {"role": "system", "content": "You generate structured JSON blog posts without any commentary or formatting."},
             {"role": "user", "content": prompt}
         ],
-        temperature=0.3
+        temperature=0.4
     )
 
     raw_output = completion.choices[0].message.content.strip()
